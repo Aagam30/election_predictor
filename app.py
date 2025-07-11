@@ -1,3 +1,4 @@
+import os
 from flask import Flask, render_template, request
 import pickle
 import numpy as np
@@ -5,8 +6,13 @@ import numpy as np
 app = Flask(__name__)
 
 # Load the trained model and scaler
-model = pickle.load(open("election_model.pkl", "rb"))
-scaler = pickle.load(open("scaler.pkl", "rb"))
+try:
+    model = pickle.load(open("election_model.pkl", "rb"))
+    scaler = pickle.load(open("scaler.pkl", "rb"))
+except Exception as e:
+    print("Error loading model or scaler:", e)
+    model = None
+    scaler = None
 
 @app.route("/", methods=["GET", "POST"])
 def predict():
@@ -30,4 +36,5 @@ def predict():
     return render_template("index.html", prediction=prediction)
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000, debug=False)
+    port = int(os.environ.get("PORT", 5000))  # Render sets PORT as env variable
+    app.run(host="0.0.0.0", port=port, debug=False)
