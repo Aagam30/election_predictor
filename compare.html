@@ -1,0 +1,344 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compare Candidates - Election Predictor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 2.2rem;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .nav-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 0 10px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+
+        .candidates-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .candidate-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            border: 2px solid #e0e0e0;
+        }
+
+        .candidate-card h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #34495e;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .compare-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .compare-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .results {
+            margin-top: 30px;
+            display: none;
+        }
+
+        .result-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            border-left: 5px solid #667eea;
+        }
+
+        .result-card.win {
+            border-left-color: #27ae60;
+            background: #e8f5e8;
+        }
+
+        .result-card.lose {
+            border-left-color: #e74c3c;
+            background: #fdf2f2;
+        }
+
+        .result-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .result-prediction {
+            font-size: 16px;
+            margin-top: 5px;
+        }
+
+        .confidence-bar {
+            width: 100%;
+            height: 20px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff4757, #ffa726, #66bb6a);
+            transition: width 0.8s ease;
+        }
+
+        .add-candidate {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+
+        .remove-candidate {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            float: right;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div style="text-align: center; margin-bottom: 30px;">
+            <a href="/" class="nav-btn">🏠 Home</a>
+            <a href="/history" class="nav-btn">📊 History</a>
+        </div>
+
+        <h1>⚖️ Compare Candidates</h1>
+        <p style="text-align: center; color: #7f8c8d; margin-bottom: 30px;">
+            Compare multiple candidates side-by-side to see their predicted outcomes
+        </p>
+
+        <button class="add-candidate" onclick="addCandidate()">➕ Add Candidate</button>
+
+        <div id="candidates-container" class="candidates-grid">
+            <!-- Candidates will be added here -->
+        </div>
+
+        <button class="compare-btn" onclick="compareCandidates()">🔍 Compare All Candidates</button>
+
+        <div id="results" class="results">
+            <h2>📊 Comparison Results</h2>
+            <div id="results-container"></div>
+        </div>
+    </div>
+
+    <script>
+        let candidateCount = 0;
+
+        function addCandidate() {
+            candidateCount++;
+            const container = document.getElementById('candidates-container');
+            
+            const candidateCard = document.createElement('div');
+            candidateCard.className = 'candidate-card';
+            candidateCard.id = `candidate-${candidateCount}`;
+            
+            candidateCard.innerHTML = `
+                <button class="remove-candidate" onclick="removeCandidate(${candidateCount})">❌</button>
+                <h3>Candidate ${candidateCount}</h3>
+                <div class="form-group">
+                    <label>Name:</label>
+                    <input type="text" id="name-${candidateCount}" placeholder="Enter candidate name">
+                </div>
+                <div class="form-group">
+                    <label>Age:</label>
+                    <input type="number" id="age-${candidateCount}" placeholder="Enter age">
+                </div>
+                <div class="form-group">
+                    <label>Income:</label>
+                    <input type="number" id="income-${candidateCount}" placeholder="Enter annual income">
+                </div>
+                <div class="form-group">
+                    <label>Education (1-5):</label>
+                    <input type="number" id="education-${candidateCount}" min="1" max="5" placeholder="1=Basic, 5=Advanced">
+                </div>
+                <div class="form-group">
+                    <label>Sentiment (-1 to 1):</label>
+                    <input type="number" id="sentiment-${candidateCount}" min="-1" max="1" step="0.01" placeholder="-1=Negative, 1=Positive">
+                </div>
+                <div class="form-group">
+                    <label>Poll %:</label>
+                    <input type="number" id="poll-${candidateCount}" placeholder="Enter poll percentage">
+                </div>
+            `;
+            
+            container.appendChild(candidateCard);
+        }
+
+        function removeCandidate(id) {
+            const candidate = document.getElementById(`candidate-${id}`);
+            if (candidate) {
+                candidate.remove();
+            }
+        }
+
+        function compareCandidates() {
+            const candidates = [];
+            const candidateCards = document.querySelectorAll('.candidate-card');
+            
+            candidateCards.forEach(card => {
+                const id = card.id.split('-')[1];
+                const name = document.getElementById(`name-${id}`).value;
+                const age = parseFloat(document.getElementById(`age-${id}`).value);
+                const income = parseFloat(document.getElementById(`income-${id}`).value);
+                const education = parseFloat(document.getElementById(`education-${id}`).value);
+                const sentiment = parseFloat(document.getElementById(`sentiment-${id}`).value);
+                const poll = parseFloat(document.getElementById(`poll-${id}`).value);
+                
+                if (name && !isNaN(age) && !isNaN(income) && !isNaN(education) && !isNaN(sentiment) && !isNaN(poll)) {
+                    candidates.push({
+                        name: name,
+                        age: age,
+                        income: income,
+                        education: education,
+                        sentiment: sentiment,
+                        poll: poll
+                    });
+                }
+            });
+            
+            if (candidates.length === 0) {
+                alert('Please add at least one candidate with complete information.');
+                return;
+            }
+            
+            // Send to API
+            fetch('/api/compare', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ candidates: candidates })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    displayResults(data.results);
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while comparing candidates.');
+            });
+        }
+
+        function displayResults(results) {
+            const resultsContainer = document.getElementById('results-container');
+            resultsContainer.innerHTML = '';
+            
+            // Sort results by confidence (descending)
+            results.sort((a, b) => b.confidence - a.confidence);
+            
+            results.forEach(result => {
+                const resultCard = document.createElement('div');
+                resultCard.className = `result-card ${result.prediction.toLowerCase()}`;
+                
+                resultCard.innerHTML = `
+                    <div class="result-name">${result.name}</div>
+                    <div class="result-prediction">
+                        Prediction: <strong>${result.prediction}</strong>
+                    </div>
+                    <div style="margin-top: 10px;">
+                        <strong>Confidence: ${result.confidence}%</strong>
+                        <div class="confidence-bar">
+                            <div class="confidence-fill" style="width: ${result.confidence}%"></div>
+                        </div>
+                    </div>
+                `;
+                
+                resultsContainer.appendChild(resultCard);
+            });
+            
+            document.getElementById('results').style.display = 'block';
+        }
+
+        // Add initial candidate
+        addCandidate();
+        addCandidate();
+    </script>
+</body>
+</html>

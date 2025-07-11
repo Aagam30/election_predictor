@@ -1,0 +1,431 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Election Outcome Predictor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            align-items: start;
+        }
+
+        .prediction-panel, .insights-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 2.2rem;
+            font-weight: 700;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #34495e;
+            font-weight: 600;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e8ed;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 18px 40px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 20px;
+            width: 100%;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 12px;
+            font-size: 1.4rem;
+            font-weight: bold;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        .result.win {
+            background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%);
+            color: white;
+            border: 2px solid #4caf50;
+        }
+
+        .result.lose {
+            background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);
+            color: white;
+            border: 2px solid #f44336;
+        }
+
+        .confidence-score {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        .confidence-bar {
+            width: 100%;
+            height: 20px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff4757, #ffa726, #66bb6a);
+            transition: width 0.8s ease;
+        }
+
+        .feature-importance {
+            margin-top: 30px;
+        }
+
+        .feature-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .feature-bar {
+            width: 100px;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .feature-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+        }
+
+        .history-section {
+            margin-top: 30px;
+        }
+
+        .history-item {
+            background: #f8f9fa;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            background: #f0f0f0;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .navigation {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 10px 20px;
+            margin: 0 10px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .input-icon {
+            position: relative;
+        }
+
+        .input-icon::before {
+            content: attr(data-icon);
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 18px;
+            color: #667eea;
+            z-index: 1;
+        }
+
+        .input-icon input {
+            padding-left: 50px;
+        }
+
+        .description {
+            color: #7f8c8d;
+            margin-bottom: 30px;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="navigation">
+        <a href="/" class="nav-btn">🏠 Home</a>
+        <a href="/history" class="nav-btn">📊 History</a>
+        <a href="/compare" class="nav-btn">⚖️ Compare</a>
+    </div>
+
+    <div class="container">
+        <div class="prediction-panel">
+            <h1>🗳️ Election Outcome Predictor</h1>
+            <p class="description">
+                Predict election outcomes using advanced machine learning algorithms. 
+                Enter the demographic and polling data below to get your prediction.
+            </p>
+            
+            <form method="post">
+                <div class="form-group">
+                    <label for="age">👤 Age</label>
+                    <div class="input-icon" data-icon="👤">
+                        <input type="number" id="age" name="age" step="1" required placeholder="Enter age">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="income">💰 Annual Income</label>
+                    <div class="input-icon" data-icon="💰">
+                        <input type="number" id="income" name="income" step="1000" required placeholder="Enter income">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="education">🎓 Education Level (1-5)</label>
+                    <div class="input-icon" data-icon="🎓">
+                        <input type="number" id="education" name="education" step="1" min="1" max="5" required placeholder="1=Basic, 5=Advanced">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="sentiment">📊 Sentiment Score (-1 to 1)</label>
+                    <div class="input-icon" data-icon="📊">
+                        <input type="number" id="sentiment" name="sentiment" step="0.01" min="-1" max="1" required placeholder="-1=Negative, 1=Positive">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="poll">📈 Poll Percentage</label>
+                    <div class="input-icon" data-icon="📈">
+                        <input type="number" id="poll" name="poll" step="0.1" required placeholder="Enter poll percentage">
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn">
+                    🔮 Predict Election Outcome
+                </button>
+            </form>
+
+            {% if result %}
+                {% if "Win" in result %}
+                    <div class="result win">
+                        <span class="icon">🎉</span>
+                        <strong>Prediction: {{ result }}</strong>
+                        <div>The candidate is likely to win!</div>
+                        {% if confidence %}
+                            <div class="confidence-score">
+                                <strong>Confidence: {{ confidence }}%</strong>
+                                <div class="confidence-bar">
+                                    <div class="confidence-fill" style="width: {{ confidence }}%"></div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% elif "Lose" in result %}
+                    <div class="result lose">
+                        <span class="icon">😔</span>
+                        <strong>Prediction: {{ result }}</strong>
+                        <div>The candidate is likely to lose.</div>
+                        {% if confidence %}
+                            <div class="confidence-score">
+                                <strong>Confidence: {{ confidence }}%</strong>
+                                <div class="confidence-bar">
+                                    <div class="confidence-fill" style="width: {{ confidence }}%"></div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            {% endif %}
+        </div>
+
+        <div class="insights-panel">
+            <div class="tabs">
+                <button class="tab-btn active" onclick="showTab('insights')">🧠 Insights</button>
+                <button class="tab-btn" onclick="showTab('history')">📈 Recent</button>
+            </div>
+
+            <div id="insights" class="tab-content active">
+                <h3>🎯 Feature Importance</h3>
+                <p>Factors that most influence election outcomes:</p>
+                <div class="feature-importance">
+                    {% for feature, importance in feature_importance %}
+                        <div class="feature-item">
+                            <span>{{ feature }}</span>
+                            <div class="feature-bar">
+                                <div class="feature-fill" style="width: {{ (importance * 100) | round(1) }}%"></div>
+                            </div>
+                            <span>{{ (importance * 100) | round(1) }}%</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div id="history" class="tab-content">
+                <h3>📊 Recent Predictions</h3>
+                {% if history %}
+                    {% for prediction in history %}
+                        <div class="history-item">
+                            <strong>{{ prediction.timestamp }}</strong><br>
+                            Prediction: <span style="color: {{ 'green' if prediction.prediction == 'Win' else 'red' }}">{{ prediction.prediction }}</span> ({{ prediction.confidence }}% confidence)<br>
+                            <small>Age: {{ prediction.age }}, Income: ${{ prediction.income }}, Poll: {{ prediction.poll }}%</small>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p>No predictions yet. Make your first prediction!</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showTab(tabName) {
+            // Hide all tab contents
+            const contents = document.querySelectorAll('.tab-content');
+            contents.forEach(content => content.classList.remove('active'));
+            
+            // Remove active class from all buttons
+            const buttons = document.querySelectorAll('.tab-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            
+            // Show selected tab and mark button as active
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Add some interactivity to form inputs
+        document.querySelectorAll('input[type="number"]').forEach(input => {
+            input.addEventListener('input', function() {
+                if (this.value) {
+                    this.style.borderColor = '#667eea';
+                } else {
+                    this.style.borderColor = '#e1e8ed';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
